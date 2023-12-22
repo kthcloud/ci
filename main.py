@@ -43,7 +43,11 @@ def cleanup():
         for fail in failed:
             f.write(f"\t➡️  {fail}\n")
         f.write(f"⌛ Done in {str(time.time() - timer).split('.')[0]} seconds\n")
-        f.write(f"👍 Great job!\n")
+
+        if len(failed) > 0:
+            f.write("😔 Better luck next time!\n")
+        else:
+            f.write(f"👍 Great job!\n")
 
 
 def get_accounts():

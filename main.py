@@ -111,7 +111,7 @@ def create_vms():
                         "cpuCores": 2,
                         "diskSize": 20,
                         "ram": 4,
-                        "zone": "se-flem",
+                        "zone": zone,
                     },
                 )
                 if not vm:
@@ -220,15 +220,25 @@ if __name__ == "__main__":
     passed = []
     timer = time.time()
 
-    # Tests
-    accounts = get_accounts()
-    vm_ids = create_vms()
-    await_vm_ready()
+    zones = os.getenv("kthcloud_zones")
 
-    #
-    # do some stuff
-    #
+    if not zones:
+        raise ValueError("Environment variable kthcloud_zones not set")
 
-    # Summary
-    delete_vms()
+    zones = zones.split(",")
+
+    for zone in zones:
+        print(f"🔎 Checking zone {zone}")
+
+        # Tests
+        accounts = get_accounts()
+        vm_ids = create_vms()
+        await_vm_ready()
+
+        #
+        # do some stuff
+        #
+
+        delete_vms()
+
     cleanup()

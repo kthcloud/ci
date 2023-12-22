@@ -18,8 +18,8 @@ def setup():
   \\__________/ /_/|_|\\__/_/ /_/\\___/_/\\____/\\__,_/\\__,_/   """
     )
 
-    print("🏃 Starting test suite"
-)
+    print("🏃 Starting test suite")
+
 
 def cleanup():
     print(f"⌛ Done in {str(time.time() - timer).split('.')[0]} seconds")
@@ -142,11 +142,11 @@ def await_vm_ready():
         for account in accounts:
             if "vms" not in account.keys():
                 continue
-            for vm in account["vms"]:
-                if vm in done or vm in errored:
+            for vm_id in account["vms"]:
+                if vm_id in done or vm_id in errored:
                     continue
                 try:
-                    vm = vms.get_vm(account["token"], vm)
+                    vm = vms.get_vm(account["token"], vm_id)
                     if not vm:
                         raise Exception("Server did not return a valid JSON response")
 
@@ -155,13 +155,13 @@ def await_vm_ready():
 
                 except Exception as e:
                     failed.append(
-                        f"Failed to get vm {vm['id']} for {account['username']}, reason: {e}"
+                        f"Failed to get vm {vm_id} for {account['username']}, reason: {e}"
                     )
-                    errored.add(vm["id"])
+                    errored.add(vm_id)
                     break
 
                 if vm["status"] == "resourceRunning":
-                    done.add(vm["id"])
+                    done.add(vm_id)
 
         if len(done) == len(vm_ids):
             return
@@ -187,7 +187,7 @@ def await_vm_ready():
 
 
 def delete_vms():
-    print(f"🗑️  Deleting {len(vm_ids)} vms")
+    print(f"🗑️  Deleting all vms")
     i = 0
     for account in accounts:
         cleanup = vms.get_vms(account["token"])

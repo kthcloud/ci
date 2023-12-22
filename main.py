@@ -240,5 +240,6 @@ if __name__ == "__main__":
         #
 
         delete_vms()
+        time.sleep(60)
 
     cleanup()

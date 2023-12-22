@@ -2,10 +2,12 @@ import os
 import time
 import sys
 from dotenv import load_dotenv
+
 load_dotenv()
 import datetime
 import iam
 import vms
+
 
 def setup():
     print(
@@ -16,7 +18,8 @@ def setup():
   \\__________/ /_/|_|\\__/_/ /_/\\___/_/\\____/\\__,_/\\__,_/   """
     )
 
-    print("🏃 Starting test suite")
+    print("🏃 Starting test suite"
+)
 
 def cleanup():
     print(f"⌛ Done in {str(time.time() - timer).split('.')[0]} seconds")
@@ -30,11 +33,11 @@ def cleanup():
 
         print("😔 Better luck next time!")
     else:
-      print("🎉 Great job!")
+        print("🎉 Great job!")
 
     # write a report to a file
     with open("report.txt", "w") as f:
-        f.write(f"kthcloud ci - report of {datetime.datetime.now()}\n") 
+        f.write(f"kthcloud ci - report of {datetime.datetime.now()}\n")
         f.write(f"✅ Passed {len(passed)} tests\n")
         f.write(f"❌ Failed {len(failed)} tests\n")
         for fail in failed:
@@ -42,169 +45,186 @@ def cleanup():
         f.write(f"⌛ Done in {str(time.time() - timer).split('.')[0]} seconds\n")
         f.write(f"👍 Great job!\n")
 
+
 def get_accounts():
-  accounts_raw = os.getenv("kthcloud_test_accounts")
-  if not accounts_raw:
-      raise ValueError("Environment variable kthcloud_test_accounts not set")
+    accounts_raw = os.getenv("kthcloud_test_accounts")
+    if not accounts_raw:
+        raise ValueError("Environment variable kthcloud_test_accounts not set")
 
-  accounts_arr = accounts_raw.split(",")
-  accounts = []
-  for account in accounts_arr:
-      acc = account.split(":")
-      accounts.append({"username": acc[0], "password": acc[1]})
+    accounts_arr = accounts_raw.split(",")
+    accounts = []
+    for account in accounts_arr:
+        acc = account.split(":")
+        accounts.append({"username": acc[0], "password": acc[1]})
 
-  print(f"{len(accounts)} accounts to test: {', '.join(map(lambda x: x["username"], accounts))}")
+    print(
+        f"{len(accounts)} accounts to test: {', '.join(map(lambda x: x['username'], accounts))}"
+    )
 
-  for i, account in enumerate(accounts):
-    progress = ["⌛", "⏳"]
-    sys.stdout.write(f"\r{progress[i%2]} Checking {i+1} of {len(accounts)} accounts")
-    sys.stdout.flush()
-    try:
-      token = iam.get_oidc_token(account["username"], account["password"])
-      if not token:
-          raise Exception("Failed to get token")
-    
-    except Exception as e:
-        failed.append(f"Failed to get token for {account['username']}")
-        continue
-    
-    
-    passed.append(f"✔️ Got token for {account['username']}")
-    account["token"] = token
+    for i, account in enumerate(accounts):
+        progress = ["⌛", "⏳"]
+        sys.stdout.write(
+            f"\r{progress[i%2]} Checking {i+1} of {len(accounts)} accounts"
+        )
+        sys.stdout.flush()
+        try:
+            token = iam.get_oidc_token(account["username"], account["password"])
+            if not token:
+                raise Exception("Failed to get token")
 
-  print("\n")
-  return accounts
+        except Exception as e:
+            failed.append(f"Failed to get token for {account['username']}")
+            continue
+
+        passed.append(f"✔️ Got token for {account['username']}")
+        account["token"] = token
+
+    print("\n")
+    return accounts
+
 
 def create_vms():
-  pubkey = os.getenv("ssh_pubkey")
+    pubkey = os.getenv("ssh_pubkey")
 
-  vm_ids = []
-  i=0
-  for j, account in enumerate(accounts):
-    num = 0
-    while True:
-      i += 1
-      progress = ["🔨", "⚒️ "]
-      sys.stdout.write(f"\r{progress[i%2]} {len(vm_ids)} vms created, account {j+1} of {len(accounts)}")
-      sys.stdout.flush()
-      num += 1
-      try:
-        vm = vms.create_vm(account["token"], {
-          "name": f"test-vm-{account['username'].split('@')[0]}-{num}",
-          "sshPublicKey": pubkey,
-          "cpuCores": 2,
-          "diskSize": 20,
-          "ram": 4,
-          "zone": "se-flem"})
-        if not vm:
-          raise Exception("Failed to create vm")
-      except Exception:
-        if num == 1:
-          failed.append(f"Failed to create vm for {account['username']}")
-        break
+    vm_ids = []
+    i = 0
+    for j, account in enumerate(accounts):
+        num = 0
+        while True:
+            i += 1
+            progress = ["🔨", "⚒️ "]
+            sys.stdout.write(
+                f"\r{progress[i%2]} {len(vm_ids)} vms created, account {j+1} of {len(accounts)}"
+            )
+            sys.stdout.flush()
+            num += 1
+            try:
+                vm = vms.create_vm(
+                    account["token"],
+                    {
+                        "name": f"test-vm-{account['username'].split('@')[0]}-{num}",
+                        "sshPublicKey": pubkey,
+                        "cpuCores": 2,
+                        "diskSize": 20,
+                        "ram": 4,
+                        "zone": "se-flem",
+                    },
+                )
+                if not vm:
+                    raise Exception("Failed to create vm")
+            except Exception:
+                if num == 1:
+                    failed.append(f"Failed to create vm for {account['username']}")
+                break
 
-      passed.append(f"✔️ Created vm for {account['username']}")
-      if "vms" in account.keys():
-        account["vms"].append(vm)
-      else:
-        account["vms"] = [vm]
-      vm_ids.append(vm)
-      time.sleep(5)
-  
-  print("\n")
-  print(f"🥹  Created {len(vm_ids)} vms")
-  return vm_ids
+            passed.append(f"✔️ Created vm for {account['username']}")
+            if "vms" in account.keys():
+                account["vms"].append(vm)
+            else:
+                account["vms"] = [vm]
+            vm_ids.append(vm)
+            time.sleep(5)
+
+    print("\n")
+    print(f"🥹  Created {len(vm_ids)} vms")
+    return vm_ids
+
 
 def await_vm_ready():
-  print(f"👀 Checking {len(vm_ids)} vms")
-  start_time = time.time()
-  done = set()
-  errored = set()
+    print(f"👀 Checking {len(vm_ids)} vms")
+    start_time = time.time()
+    done = set()
+    errored = set()
 
-  i = 0
-  while True:
-    i += 1
-    for account in accounts:
-      if "vms" not in account.keys():
-        continue
-      for vm in account["vms"]:
-        if vm in done or vm in errored:
-          continue
-        try:
-          vm = vms.get_vm(account["token"], vm)
-          if not vm:
-            raise Exception("Server did not return a valid JSON response")
-          
-          if vm["status"] == "resourceNotFound":
-            raise Exception("resourceNotFound")
-          
-        except Exception as e:
-          failed.append(f"Failed to get vm {vm['id']} for {account['username']}, reason: {e}")
-          errored.add(vm["id"])
-          break
+    i = 0
+    while True:
+        i += 1
+        for account in accounts:
+            if "vms" not in account.keys():
+                continue
+            for vm in account["vms"]:
+                if vm in done or vm in errored:
+                    continue
+                try:
+                    vm = vms.get_vm(account["token"], vm)
+                    if not vm:
+                        raise Exception("Server did not return a valid JSON response")
 
-        if vm["status"] == "resourceRunning":
-           done.add(vm["id"])
-    
-    if len(done) == len(vm_ids):
-      return          
+                    if vm["status"] == "resourceNotFound":
+                        raise Exception("resourceNotFound")
 
-    if len(errored) == len(vm_ids):
-      failed.append(f"Failed to get any vms")
-      break
+                except Exception as e:
+                    failed.append(
+                        f"Failed to get vm {vm['id']} for {account['username']}, reason: {e}"
+                    )
+                    errored.add(vm["id"])
+                    break
 
-    progress = ["⌛", "⏳"]
-    sys.stdout.write(f"\r{progress[i%2]} {len(done)} of {len(vm_ids)} vms ready, {len(errored)} errored")
-    sys.stdout.flush()
+                if vm["status"] == "resourceRunning":
+                    done.add(vm["id"])
 
-    time.sleep(1)
+        if len(done) == len(vm_ids):
+            return
 
-    if time.time() - start_time > 300:
-      failed.append(f"Reason: VM creation timed out")
-      break
+        if len(errored) == len(vm_ids):
+            failed.append(f"Failed to get any vms")
+            break
 
-  print("\n")
-  return
-    
-def delete_vms():
-  print(f"🗑️  Deleting {len(vm_ids)} vms")
-  i = 0
-  for account in accounts:
-    cleanup = vms.get_vms(account["token"])
-
-    for vm in cleanup:
-      i+=1
-      try:
-        vms.delete_vm(account["token"], vm["id"])
         progress = ["⌛", "⏳"]
-        sys.stdout.write(f"\r{progress[i%2]} Deleting vms...")
+        sys.stdout.write(
+            f"\r{progress[i%2]} {len(done)} of {len(vm_ids)} vms ready, {len(errored)} errored"
+        )
         sys.stdout.flush()
-      except Exception as e:
-        failed.append(f"Failed to delete vm for {account['username']}")
-        break
 
-      passed.append(f"✔️ Deleted vm for {account['username']}")
+        time.sleep(1)
 
-  print("\n")
-  return
+        if time.time() - start_time > 300:
+            failed.append(f"Reason: VM creation timed out")
+            break
+
+    print("\n")
+    return
+
+
+def delete_vms():
+    print(f"🗑️  Deleting {len(vm_ids)} vms")
+    i = 0
+    for account in accounts:
+        cleanup = vms.get_vms(account["token"])
+
+        for vm in cleanup:
+            i += 1
+            try:
+                vms.delete_vm(account["token"], vm["id"])
+                progress = ["⌛", "⏳"]
+                sys.stdout.write(f"\r{progress[i%2]} Deleting vms...")
+                sys.stdout.flush()
+            except Exception as e:
+                failed.append(f"Failed to delete vm for {account['username']}")
+                break
+
+            passed.append(f"✔️ Deleted vm for {account['username']}")
+
+    print("\n")
+    return
+
 
 if __name__ == "__main__":
-  # Preparations
-  setup()
-  failed = []
-  passed = []
-  timer = time.time()
+    # Preparations
+    setup()
+    failed = []
+    passed = []
+    timer = time.time()
 
-  # Tests
-  accounts = get_accounts()
-  vm_ids = create_vms()
-  await_vm_ready()
+    # Tests
+    accounts = get_accounts()
+    vm_ids = create_vms()
+    await_vm_ready()
 
-  #
-  # do some stuff 
-  #
-  
-  # Summary
-  delete_vms()
-  cleanup()
-    
+    #
+    # do some stuff
+    #
+
+    # Summary
+    delete_vms()
+    cleanup()

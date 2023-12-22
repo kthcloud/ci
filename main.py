@@ -19,7 +19,7 @@ def setup():
     print("🏃 Starting test suite")
 
 def cleanup():
-    print(f"⌛ Done in {str(time.time() - timer).split(".")[0]} seconds")
+    print(f"⌛ Done in {str(time.time() - timer).split('.')[0]} seconds")
     print(f"✅ Passed {len(passed)} tests")
 
     if len(failed) > 0:
@@ -53,7 +53,7 @@ def get_accounts():
       acc = account.split(":")
       accounts.append({"username": acc[0], "password": acc[1]})
 
-  print(f"{len(accounts)} accounts to test: {", ".join(map(lambda x: x["username"], accounts))}")
+  print(f"{len(accounts)} accounts to test: {', '.join(map(lambda x: x["username"], accounts))}")
 
   for i, account in enumerate(accounts):
     progress = ["⌛", "⏳"]
@@ -139,7 +139,7 @@ def await_vm_ready():
             raise Exception("resourceNotFound")
           
         except Exception as e:
-          failed.append(f"Failed to get vm {vm["id"]} for {account['username']}, reason: {e}")
+          failed.append(f"Failed to get vm {vm['id']} for {account['username']}, reason: {e}")
           errored.add(vm["id"])
           break
 
